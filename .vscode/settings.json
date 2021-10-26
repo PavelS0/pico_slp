@@ -1,0 +1,37 @@
+{
+    "cmake.configureOnOpen": true,
+    "cmake.statusbar.advanced": {
+        "debug": {
+            "visibility": "hidden"
+        },
+        "launch": {
+            "visibility": "hidden"
+        },
+        "build": {
+            "visibility": "default"
+        },
+        "buildTarget": {
+            "visibility": "hidden"
+        }
+    },
+    "cmake.buildBeforeRun": true,
+    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+    "files.associations": {
+        "raspberry_256x256_rgb565.h": "c",
+        "lcd_graph.h": "c",
+        "lcd_primitives.h": "c",
+        "math.h": "c",
+        "stdlib.h": "c",
+        "stdio.h": "c",
+        "cmath": "c",
+        "lcd.h": "c",
+        "array": "c",
+        "string_view": "c",
+        "initializer_list": "c",
+        "utility": "c",
+        "algorithm": "c",
+        "multicore.h": "c",
+        "lcd.pio.h": "c"
+    },
+    "cortex-debug.variableUseNaturalFormat": true,
+}

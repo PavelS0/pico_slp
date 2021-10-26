@@ -1,0 +1,56 @@
+
+.program lcd
+.side_set 1
+
+.define DREQ PIO_INTR_SM0_TXNFULL_LSB
+; Pin assignments:
+; - SCK is side-set pin 0
+; - MOSI is OUT pin 0
+; - MISO is IN pin 0
+;
+; Autopush and autopull must be enabled, and the serial frame size is set by
+; configuring the push/pull threshold. Shift left/right is fine, but you must
+; justify the data yourself. This is done most conveniently for frame sizes of
+; 8 or 16 bits by using the narrow store replication and narrow load byte
+; picking behaviour of RP2040's IO fabric.
+
+; Clock phase = 0: data is captured on the leading edge of each SCK pulse, and
+; transitions on the trailing edge, or some time before the first leading edge.
+
+    ;out pins, 2 side 0 ; DATA - lsb bit, DC - next bit
+    ;nop side 1
+
+.wrap_target
+data_loop:
+    set y, 6 side 0
+bit_loop:
+    out pins, 1 side 0 ; out 7 bits in the loop
+    jmp y-- bit_loop side 1
+    
+    out pins, 2 side 0 ; out 8th bit and data/command bit
+    out y, 1 side 1 ; out 9th bit to y
+
+    jmp y-- data_loop side 0; if y asserted go to data_loop (read next data/comand in this word)
+    out NULL, 32 side 0 ; discard all data in OSR
+.wrap
+
+% c-sdk {
+#include "hardware/gpio.h"
+static inline void lcd_program_init(PIO pio, uint sm, uint offset, float clk_div, uint clk_pin, uint data_pin_base) {
+    pio_gpio_init(pio, data_pin_base);
+    pio_gpio_init(pio, data_pin_base+1);
+    pio_gpio_init(pio, clk_pin);
+
+    pio_sm_set_consecutive_pindirs(pio, sm, data_pin_base, 2, true);
+    pio_sm_set_consecutive_pindirs(pio, sm, clk_pin, 1, true);
+
+    pio_sm_config c = lcd_program_get_default_config(offset);
+    sm_config_set_sideset_pins(&c, clk_pin);
+    sm_config_set_out_pins(&c, data_pin_base, 2);
+    sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_TX);
+    sm_config_set_clkdiv(&c, clk_div);
+    sm_config_set_out_shift(&c, false, true, 32);
+    pio_sm_init(pio, sm, offset, &c);
+    pio_sm_set_enabled(pio, sm, true);
+}
+%}
