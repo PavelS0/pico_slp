@@ -33,7 +33,7 @@ pico_add_extra_outputs(test)
 #target_sources(test PRIVATE blink.c)
 
 # Pull in our pico_stdlib which pulls in commonly used features
-target_link_libraries(test PRIVATE pico_stdlib pico_multicore pico_sync hardware_pio hardware_interp hardware_dma hardware_adc  hardware_irq kissfft)
+target_link_libraries(test PRIVATE pico_stdlib pico_multicore pico_sync pico_mem_ops hardware_pio hardware_interp hardware_dma hardware_adc  hardware_irq kissfft)
 
 pico_set_divider_implementation(test compiler)
 
