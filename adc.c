@@ -35,7 +35,7 @@ void adc_ini(uint16_t* b, uint16_t size) {
         false     // Shift each sample to 8 bits when pushing to FIFO
     );
 
-    adc_set_clkdiv(0);
+    adc_set_clkdiv(20);
     adc_irq_set_enabled(true);
     printf("Arming DMA\n");
     sleep_ms(1000);

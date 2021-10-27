@@ -188,7 +188,10 @@ inline void lcd_write_ramwr() {
 }
 
 inline void lcd_write_pixel_3b(uint16_t x, uint16_t y, ColorRGBByte c) {
-    lcd_write_addr(x, y, x+2, y+2);
+    lcd_write_addr(x, y, x + 2, y + 2);
+    lcd_write(1, c.color);
+    lcd_write(1, c.color);
+    lcd_write(1, c.color);
     lcd_write(1, c.color);
 }
 
