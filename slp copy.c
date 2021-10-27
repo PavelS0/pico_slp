@@ -29,30 +29,18 @@ uint16_t samples[SAMPLING_SIZE];
 uint16_t spectre[SAMPLING_SIZE];
 
 void init_mem_dma(int dma_chan, volatile void* dst, volatile void* src) ;
-//void init_dma0_irq0();
-//void dma_irq0();
 void core1_main();
-/* void send_samples_to_core0(uint16_t* buf);
-void send_spectre_to_core0(uint16_t* buf); */
 
 int main() {
     stdio_init_all();
 
-
-
     memset(samples, 0, SAMPLING_SIZE * sizeof(uint16_t));
     memset(spectre, 0, SAMPLING_SIZE * sizeof(uint16_t));
-    
-   
 
+    init_mem_dma(DMA_SAMPLES_CHAN, samples, samples_area);
+    init_mem_dma(DMA_SPECTRE_CHAN, spectre, samples_area);
 
-    //init_mem_dma(DMA_SAMPLES_CHAN, samples, samples_area);
-    //init_mem_dma(DMA_SPECTRE_CHAN, spectre, samples_area);
-
-    
-    
-
-   /*  lcd_init(pio0, 0);
+    lcd_init(pio0, 0);
 
     ColorRGBByte color;
     lcd_set_color_rgb(&color, 1, 0, 0);
@@ -67,15 +55,13 @@ int main() {
 
     
     multicore_launch_core1(core1_main);
-    sleep_ms(200);
+
     while (1)
     {
-        //dma_channel_wait_for_finish_blocking(DMA_SAMPLES_CHAN);
-        //lcd_graph_draw_unsigned(&g,  samples, DISPLAY_SAMPLES, color);    
+        lcd_graph_draw_unsigned(&g,  samples, DISPLAY_SAMPLES, color);    
 
         //dma_channel_wait_for_finish_blocking(DMA_SPECTRE_CHAN);
-        //lcd_graph_draw_unsigned(&g1, spectre, DISPLAY_SAMPLES, color);
-       
+        //lcd_graph_draw_unsigned(&g1, spectre, DISPLAY_SAMPLES, color); 
     } 
 }
 
@@ -114,7 +100,7 @@ void core1_main() {
         false           // Start immediately.
     );
 
-    //adc_ini(samples_area, SAMPLING_SIZE * 2);
+    adc_ini(samples_area, SAMPLING_SIZE * 2);
     
 
     uint16_t frequency = 20;
