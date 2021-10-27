@@ -28,7 +28,7 @@ int main() {
 
 void core1_main() {
     dma_channel_config c = dma_channel_get_default_config(DMA_SAMPLES_CHAN);
-    channel_config_set_transfer_data_size(&c, DMA_SIZE_32);
+    channel_config_set_transfer_data_size(&c, DMA_SIZE_16); // uint16_t
     channel_config_set_read_increment(&c, true);
     channel_config_set_write_increment(&c, true);
 
@@ -37,7 +37,7 @@ void core1_main() {
         &c,            // The configuration we just created
         samples,           // The initial write address
         samples_area,           // The initial read address
-        0, // Number of transfers; in this case each is 1 byte.
+        0, // Number of transfers;
         false           // Start immediately.
     );
 
@@ -49,7 +49,7 @@ void core1_main() {
         // memcpy(samples, s, SAMPLING_SIZE * sizeof(uint16_t));
         
         if (!dma_channel_is_busy(DMA_SAMPLES_CHAN)) {
-            dma_channel_transfer_from_buffer_now(DMA_SAMPLES_CHAN, samples_area, 128);
+            dma_channel_transfer_from_buffer_now(DMA_SAMPLES_CHAN, samples_area, SAMPLING_SIZE);
         }
     }
 }
