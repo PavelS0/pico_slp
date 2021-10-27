@@ -41,6 +41,8 @@ void core1_main() {
         false           // Start immediately.
     );
 
+    dma_channel_claim(DMA_SAMPLES_CHAN);
+
     while(1) {
         for (int n = 0; n < SAMPLING_SIZE - 10; n++)
         {
