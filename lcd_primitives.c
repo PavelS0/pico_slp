@@ -77,11 +77,25 @@ void lcd_prim_draw_line(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, Colo
 }
 
 void lcd_prim_fill_rect(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, ColorRGBByte c) {
-    uint32_t r = ((x1 - x0) + 1) * ((y1 - y0) + 1); 
+    uint16_t xs, ys;
+    if (x1 > x0) {
+        xs = x1 - x0;
+    } else {
+        xs = x0 - x1;
+    }
+    if (y1 > y0) {
+        ys = y1 - y0;
+    } else {
+        ys = y0 - y1;
+    }
+
+    uint32_t r = (xs + 1) * (ys + 1); 
     lcd_write_addr(x0, y0, x1, y1);
+    //printf("%d %d %d %d\n", x1, x0, y1, y0);
     while (r-- > 0) {
         lcd_write_color_3b(c);
     }
+
 }
 
 

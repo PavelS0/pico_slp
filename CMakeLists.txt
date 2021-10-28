@@ -22,7 +22,7 @@ set(KISSFFT_TEST OFF)
 add_subdirectory(kissfft)
 
 add_executable(test
-    slp.c lcd.h lcd.c lcd_graph.h lcd_graph.c lcd_primitives.h lcd_primitives.c fft.h fft.c adc.h adc.c
+    slp.c lcd.h lcd.c lcd_graph.h lcd_graph.c lcd_primitives.h lcd_primitives.c lcd_indicator.c lcd_indicator.h fft.h fft.c adc.h adc.c chan.c chan.h
 )
 
 #pico_generate_pio_header(test ${CMAKE_CURRENT_LIST_DIR}/blink.pio)

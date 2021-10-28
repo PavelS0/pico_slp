@@ -13,22 +13,35 @@
 #include "lcd.pio.h"
 #include "lcd.h"
 #include "adc.h"
+#include "chan.h"
 #include "fft.h"
 #include "lcd_graph.h"
 #include "lcd_primitives.h"
+#include "lcd_indicator.h"
 
-#define SAMPLING_SIZE 512
+#define SAMPLING_SIZE 1024
 #define DISPLAY_SAMPLES SAMPLING_SIZE / 4
 #define SAMPLING_FREQ 16000
 #define DMA_SAMPLES_CHAN 4
 #define DMA_SPECTRE_CHAN 5
+#define CHAN_CNT 3
+
+typedef struct {
+    Indicator max;
+    Indicator val;
+    Indicator avg;
+    Indicator max_continuous;
+} ind_group;
 
 uint16_t samples_area[SAMPLING_SIZE * 2];
 uint16_t samples[SAMPLING_SIZE];
 uint16_t spectre[SAMPLING_SIZE];
 
-void init_mem_dma(int dma_chan, volatile void* dst, volatile void* src) ;
+chan_data ind_chan[CHAN_CNT];
+ind_group ind[CHAN_CNT];
 
+void init_mem_dma(int dma_chan, volatile void* dst, volatile void* src) ;
+void remove_dc(uint16_t* in,  int16_t* out, uint16_t n);
 void core1_main();
 void interp_cfg();
 
@@ -45,22 +58,49 @@ int main() {
     lcd_init(pio0, 0);
 
     ColorRGBByte color;
-    lcd_set_color_rgb(&color, 1, 0, 0);
+    lcd_set_color_rgb(&color, 0, 0, 1);
+    ColorRGBByte cg;
+    lcd_set_color_rgb(&cg, 0, 1, 0);
+    ColorRGBByte cb;
+    lcd_set_color_rgb(&cb, 1, 0, 0);
+    ColorRGBByte cbg;
+    lcd_set_color_rgb(&cbg, 1, 0, 1);
 
     ColorRGBByte bg;
-    lcd_set_color_rgb(&color, 0, 0, 1);
+    lcd_set_color_rgb(&bg, 0, 0, 0);
 
     lcd_prim_fill_rect(0, 0, 480, 320, bg);
 
-    Graph g = lcd_graph_init(DISPLAY_SAMPLES, 5, 5, 470, 150, bg, 1);
+    //Graph g = lcd_graph_init(DISPLAY_SAMPLES, 5, 5, 470, 150, bg, 1);
     Graph g1 = lcd_graph_init(DISPLAY_SAMPLES, 5, 160, 470, 150, bg, 2);
+
+    uint16_t x = 6;
+    for (int n = 0; n < CHAN_CNT; n++) {
+        ind[n].val = lcd_indicator_init(x, 10, 5, 60, bg);
+        x += 15;
+        ind[n].max_continuous = lcd_indicator_init(x, 10, 5, 40, bg);
+        x += 15;
+        ind[n].max = lcd_indicator_init(x, 10, 5, 60, bg);
+        x += 15;
+        ind[n].avg = lcd_indicator_init(x, 10, 5, 60, bg);
+        x += 40;
+    }
 
     multicore_launch_core1(core1_main);
 
     while (1)
     {
-        lcd_graph_draw_unsigned(&g,  samples, DISPLAY_SAMPLES, color);    
-        lcd_graph_draw_unsigned(&g1, spectre, DISPLAY_SAMPLES, color);
+        
+
+        for (int n = 0; n < CHAN_CNT; n++) {
+            //printf("int %f\n", ind_chan[n].val);
+            lcd_indicator_draw(&ind[n].val, ind_chan[n].val, color);
+            lcd_indicator_draw(&ind[n].max_continuous,  ind_chan[n].max_continuous / 256.0, cg);
+            lcd_indicator_draw(&ind[n].max, ind_chan[n].max / 256.0 , cb);
+            lcd_indicator_draw(&ind[n].avg, ind_chan[n].avg / 256.0 , cbg);
+        }
+        //lcd_graph_draw_unsigned(&g,  samples, DISPLAY_SAMPLES, color);    
+        lcd_graph_draw_unsigned(&g1, spectre, 256, color);
     } 
 }
 
@@ -76,11 +116,14 @@ void fill_test_samples(int16_t* buffer, uint16_t frequency) {
 }
 
 void core1_main() {
+    int16_t fft_in[SAMPLING_SIZE + 2];
     fft_cpx out[SAMPLING_SIZE + 2];
     float out_mag[SAMPLING_SIZE + 2];
     fft_cfg fft_c = fft_init(SAMPLING_SIZE);
 
     interp_cfg();
+
+    chan_handle* chan_hnd = chan_init(256, CHAN_CNT, 0);
     
     adc_ini(samples_area, SAMPLING_SIZE * 2);
 
@@ -93,10 +136,10 @@ void core1_main() {
             samples[n] = interp1->peek[0];
             //printf("%d\t%d\n", s[n], interp1->peek[0]);
         }
-        
+
+        remove_dc(s, fft_in, SAMPLING_SIZE);
     
-        
-        fft(fft_c, (int16_t*) s, out);
+        fft(fft_c, fft_in, out);
         fft_mag(out, out_mag, SAMPLING_SIZE);
 
         for (int n = 0; n < SAMPLING_SIZE; n++)
@@ -104,10 +147,20 @@ void core1_main() {
             spectre[n] = (uint32_t)out_mag[n];
             //interp1->accum[0] = val[n];
             //printf("%d\t%d\n", spectre[n], 0);
-        } 
+        }
+
+        chan_process(chan_hnd, spectre);
+        chan_copy_data(chan_hnd, ind_chan);
 
         //memcpy(spectre, val, SAMPLING_SIZE * sizeof(uint16_t));
     }
+}
+
+void remove_dc(uint16_t* in,  int16_t* out, uint16_t n) {
+    uint32_t sum = 0;
+    for (int i = 0 ;i < n; i++) sum += in[i];
+    uint16_t avg = sum / n;
+    for (int i = 0; i < n; i++) out[i] = in[i] - avg;
 }
 
 void init_mem_dma(int dma_chan, volatile void* dst, volatile void* src) {

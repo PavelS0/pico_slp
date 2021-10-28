@@ -31,7 +31,15 @@
         "utility": "c",
         "algorithm": "c",
         "multicore.h": "c",
-        "lcd.pio.h": "c"
+        "lcd.pio.h": "c",
+        "random": "c",
+        "limits": "c",
+        "numbers": "c",
+        "string": "c",
+        "system_error": "c",
+        "functional": "c",
+        "tuple": "c",
+        "type_traits": "c"
     },
     "cortex-debug.variableUseNaturalFormat": true,
 }
