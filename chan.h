@@ -38,6 +38,8 @@ typedef struct handle
     chan** cur_chans;
     current* currents;
     uint8_t mov_avg_idx;
+    uint32_t last_release_time;
+    uint32_t last_mavg_time;
 } chan_handle;
 chan_handle* chan_init(uint16_t size, uint16_t chan_count, uint16_t current_count);
 void chan_process(chan_handle* h, uint16_t* buf);

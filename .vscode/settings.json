@@ -39,7 +39,8 @@
         "system_error": "c",
         "functional": "c",
         "tuple": "c",
-        "type_traits": "c"
+        "type_traits": "c",
+        "chan.h": "c"
     },
     "cortex-debug.variableUseNaturalFormat": true,
 }

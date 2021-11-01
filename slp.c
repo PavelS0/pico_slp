@@ -14,17 +14,18 @@
 #include "lcd.h"
 #include "adc.h"
 #include "chan.h"
+#include "out.h"
 #include "fft.h"
 #include "lcd_graph.h"
 #include "lcd_primitives.h"
 #include "lcd_indicator.h"
 
-#define SAMPLING_SIZE 1024
+#define SAMPLING_SIZE 512
 #define DISPLAY_SAMPLES SAMPLING_SIZE / 4
 #define SAMPLING_FREQ 16000
 #define DMA_SAMPLES_CHAN 4
 #define DMA_SPECTRE_CHAN 5
-#define CHAN_CNT 3
+#define CHAN_CNT 6
 
 typedef struct {
     Indicator max;
@@ -51,10 +52,6 @@ int main() {
     memset(samples, 0, SAMPLING_SIZE * sizeof(uint16_t));
     memset(spectre, 0, SAMPLING_SIZE * sizeof(uint16_t));
 
-
-    //init_mem_dma(DMA_SAMPLES_CHAN, samples, samples_area);
-    //init_mem_dma(DMA_SPECTRE_CHAN, spectre, samples_area);
-
     lcd_init(pio0, 0);
 
     ColorRGBByte color;
@@ -76,31 +73,31 @@ int main() {
 
     uint16_t x = 6;
     for (int n = 0; n < CHAN_CNT; n++) {
-        ind[n].val = lcd_indicator_init(x, 10, 5, 60, bg);
+        //ind[n].val = lcd_indicator_init(x, 10, 3, 80, bg);
         x += 15;
-        ind[n].max_continuous = lcd_indicator_init(x, 10, 5, 40, bg);
+        ind[n].max_continuous = lcd_indicator_init(x, 10, 3, 80, bg);
         x += 15;
-        ind[n].max = lcd_indicator_init(x, 10, 5, 60, bg);
+        ind[n].max = lcd_indicator_init(x, 10, 3, 80, bg);
         x += 15;
-        ind[n].avg = lcd_indicator_init(x, 10, 5, 60, bg);
-        x += 40;
+        ind[n].avg = lcd_indicator_init(x, 10, 3, 80, bg);
+        x += 25;
     }
 
     multicore_launch_core1(core1_main);
 
     while (1)
     {
-        
+        //lcd_graph_draw_unsigned(&g,  samples, DISPLAY_SAMPLES, color);    
+        lcd_graph_draw_unsigned(&g1, spectre, 100, color);
 
         for (int n = 0; n < CHAN_CNT; n++) {
             //printf("int %f\n", ind_chan[n].val);
-            lcd_indicator_draw(&ind[n].val, ind_chan[n].val, color);
-            lcd_indicator_draw(&ind[n].max_continuous,  ind_chan[n].max_continuous / 256.0, cg);
-            lcd_indicator_draw(&ind[n].max, ind_chan[n].max / 256.0 , cb);
-            lcd_indicator_draw(&ind[n].avg, ind_chan[n].avg / 256.0 , cbg);
+            //lcd_indicator_draw(&ind[n].val, ind_chan[n].val, color);
+            lcd_indicator_draw(&ind[n].max_continuous,  ind_chan[n].max_continuous / 200.0, cg);
+            lcd_indicator_draw(&ind[n].max, ind_chan[n].max / 200.0 , cb);
+            lcd_indicator_draw(&ind[n].avg, ind_chan[n].avg / 200.0 , cbg);
         }
-        //lcd_graph_draw_unsigned(&g,  samples, DISPLAY_SAMPLES, color);    
-        lcd_graph_draw_unsigned(&g1, spectre, 256, color);
+        
     } 
 }
 
@@ -122,8 +119,8 @@ void core1_main() {
     fft_cfg fft_c = fft_init(SAMPLING_SIZE);
 
     interp_cfg();
-
-    chan_handle* chan_hnd = chan_init(256, CHAN_CNT, 0);
+    out_init(CHAN_CNT, 18);
+    chan_handle* chan_hnd = chan_init(50, CHAN_CNT, 0);
     
     adc_ini(samples_area, SAMPLING_SIZE * 2);
 
@@ -150,6 +147,7 @@ void core1_main() {
         }
 
         chan_process(chan_hnd, spectre);
+        out_process(chan_hnd);
         chan_copy_data(chan_hnd, ind_chan);
 
         //memcpy(spectre, val, SAMPLING_SIZE * sizeof(uint16_t));

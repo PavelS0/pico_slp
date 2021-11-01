@@ -21,10 +21,11 @@ void fft(fft_cfg c, int16_t* in, fft_cpx* out) {
 
 
 void fft_mag(fft_cpx* in, float* out, uint16_t size) {
+    float max = 0.0;
     for (uint16_t i = 0; i < size; i++) {
-        float mag = sqrt(in[i].r * in[i].r + in[i].i * in[i].i);
-        out[i] = mag;
-        //out[i] = 20 * (log10(mag) - log10(size * 32768));
-        //https://www.eevblog.com/forum/beginners/how-to-interpret-the-magnitude-of-fft/
+        out[i] = sqrtf(in[i].r * in[i].r + in[i].i * in[i].i);
+        //out[i] = 10 * log10f(fabsf(in[i].r * in[i].r + in[i].i * in[i].i));
+        //if (out[i] > max)
+            //max = out[i];
     }
 }

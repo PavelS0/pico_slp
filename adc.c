@@ -30,12 +30,12 @@ void adc_ini(uint16_t* b, uint16_t size) {
     adc_fifo_setup(
         true,    // Write each completed conversion to the sample FIFO
         false,    // Enable DMA data request (DREQ)
-        1,       // DREQ (and IRQ) asserted when at least 1 sample present
+        3,       // DREQ (and IRQ) asserted when at least 1 sample present
         false,   // We won't see the ERR bit because of 8 bit reads; disable.
         false     // Shift each sample to 8 bits when pushing to FIFO
     );
 
-    adc_set_clkdiv(1980); //~ 24 khz sampling rate
+    adc_set_clkdiv(2400); //~ 20 khz sampling rate
     adc_irq_set_enabled(true);
     sleep_ms(1000);
 
@@ -47,7 +47,12 @@ void adc_ini(uint16_t* b, uint16_t size) {
 
 
 static void irq () {
-    buf[index++] = adc_fifo_get();
+    uint8_t l = adc_fifo_get_level();
+    while(l > 0 && index < len)
+    {
+        buf[index++] = adc_fifo_get();
+        l--;
+    }
     
     if (index >= len) {
         adc_irq_set_enabled(false);
