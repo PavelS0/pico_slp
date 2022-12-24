@@ -52,7 +52,7 @@ Mkfile.old
 dkms.conf
 
 /build
-/kissfft
+/lib/kissfft
 
 .vscode/.cortex-debug.peripherals.state.json
 .vscode/.cortex-debug.registers.state.json

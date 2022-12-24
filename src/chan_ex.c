@@ -82,6 +82,26 @@ void calc_chan(chan* c, uint16_t avg, uint16_t max, uint8_t mov_avg_index, bool 
 
 
 void process_chans(chan_handle* c, uint16_t* buf) {
+    /*  проходим по анализируемой области и считаем среднее и максимальное
+        затем ищем все точки, где p[i] > avg + (max - avg) / 4, записывая индексы этих точек в массив.
+
+        затем значения (не индексы) необходимо отсортировать по убыванию, перемешивая индексы
+        
+        затем перемещаемся по сортированному массиву нам необходимо найти N самых больших значений
+        при этом исключить(проигнорировать) M соседних значенмй от пика,
+        
+        для этого берем первый индекс смотрим по этому индексу близжайшие N элементов
+
+        arr_a = [{val: 10, sorted_index: 1}, ...];
+        arr_sorted = [index, ...];
+        
+        после того, нужно сравнить список
+
+        ищем точки выше определенного порога
+        сортируем точки от 
+
+
+    */
     bool do_release = false;
     bool do_mavg = false;
 
@@ -143,7 +163,7 @@ void chan_copy_data(chan_handle* h, chan_data* d) {
         chan* c = &chans[i];
         d[i].max_continuous = c->max_continuous;
         d[i].max = c->max;
-        d[i].avg = c->mavg;
+        d[i].avg = c->avg;
         d[i].val = c->val;
     }
 }

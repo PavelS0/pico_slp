@@ -25,7 +25,7 @@ void adc_ini(uint16_t* b, uint16_t size) {
 
     adc_init();
 
-    adc_gpio_init(26 + CAPTURE_CHANNEL);
+    adc_gpio_init(27 + CAPTURE_CHANNEL);
     adc_select_input(CAPTURE_CHANNEL);
     adc_fifo_setup(
         true,    // Write each completed conversion to the sample FIFO
