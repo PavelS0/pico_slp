@@ -23,7 +23,7 @@ typedef struct NET_SERVER_ {
     uint8_t buffer_recv[NET_BUF_SIZE];
     int sent_buf_len;
     int sent_len;
-    int recv_packet_len;
+    uint16_t recv_packet_len;
     int recv_len;
     int run_count;
     NET_STATUS status;

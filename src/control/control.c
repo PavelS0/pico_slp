@@ -24,17 +24,34 @@ static void error_and_exit(const char *msg) {
 }
  */
 
+
+typedef struct {
+    uint8_t arr[32];
+} test_struct_t;
+
 uint16_t control_pack_test_packet(void* o, uint8_t* buf) {
-    //cmp_init(&cmp, buf, file_reader, file_skipper, file_writer);
+    test_struct_t* p = (test_struct_t*) o;
+    uint8_t i;
+    for (i = 0; i < 32; i++) {
+        memcpy(&buf[i * sizeof(i)], &p->arr[i], sizeof(i));
+    }
     return 32;
 }
 
-void* control_unpack_test_packet(uint8_t* buf) {
-   
+void* control_unpack_test_packet(uint8_t* buf, void* o) {
+    test_struct_t* p = (test_struct_t*) o;
+    uint8_t i;
+    for (i = 0; i < 32; i++) {
+        memcpy(&p->arr[i], &buf[i * sizeof(i)], sizeof(i));
+    }
+    p->arr[0] = 0;
+    return NULL;
 }
 
-void control_recv_test_packet(void* o) {
-   
+void control_recv_test_packet(PACKET_MGR* mgr, void* o) {
+    test_struct_t* p = (test_struct_t*) o;
+    p->arr[0] = 0;
+    packet_mgr_send(mgr, 0, p);
 }
 
 

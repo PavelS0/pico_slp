@@ -3,9 +3,11 @@
 
 #include "net.h"
 
+typedef struct _PACKET_MGR PACKET_MGR;
+
 typedef uint16_t (*PACKET_MGR_PACK)(void* o, uint8_t* buf);
-typedef void* (*PACKET_MGR_UNPACK)(uint8_t* buf);
-typedef void (*PACKET_MGR_RECIVED)(void* o);
+typedef void* (*PACKET_MGR_UNPACK)(uint8_t* buf, void* o);
+typedef void (*PACKET_MGR_RECIVED)(PACKET_MGR* mgr, void* o);
 
 
 #define MAX_PACKETS 64
@@ -18,10 +20,11 @@ typedef struct
     PACKET_MGR_RECIVED recv;
 } PACKET;
 
-typedef struct
+typedef struct _PACKET_MGR
 {
     NET_SERVER* tcp;
     uint8_t send_buf[MAX_PACKET_SIZE];
+    void* packet;
     PACKET cmds[MAX_PACKETS];
 } PACKET_MGR;
 

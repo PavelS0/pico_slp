@@ -9,9 +9,9 @@
 
 #define TCP_PORT 4242
 #define DEBUG_printf printf
-#define BUF_SIZE 2048
 #define TEST_ITERATIONS 10
 #define POLL_TIME_S 5
+#define XOR_SECRET 413
 
 
 static NET_SERVER* tcp_server_init(void) {
@@ -76,24 +76,41 @@ err_t tcp_server_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err
     // can use this method to cause an assertion in debug mode, if this method is called when
     // cyw43_arch_lwip_begin IS needed
     cyw43_arch_lwip_check();
+
     if (p->tot_len > 0) {
-        // handle new packet
-        if (state->recv_packet_len == 0) {
-            state->recv_len += pbuf_copy_partial(p, &state->recv_packet_len, sizeof(state->recv_packet_len), 0);
-        }
         DEBUG_printf("tcp_server_recv %d/%d err %d\n", p->tot_len, state->recv_len, err);
 
         // Receive the buffer
-        const uint16_t buffer_left = state->recv_packet_len - state->recv_len;
+        const uint16_t buffer_left = NET_BUF_SIZE - state->recv_len;
         state->recv_len += pbuf_copy_partial(p, state->buffer_recv + state->recv_len,
                                              p->tot_len > buffer_left ? buffer_left : p->tot_len, 0);
         tcp_recved(tpcb, p->tot_len);
     }
-    
     pbuf_free(p);
+
+    // new packet
+    if (state->recv_packet_len == 0) {
+        uint8_t read = sizeof(state->recv_packet_len);
+        memcpy(&state->recv_packet_len, state->buffer_recv, read);
+        uint16_t recv_xor;
+        memcpy(&recv_xor, &state->buffer_recv[read], sizeof(recv_xor));
+        
+        uint16_t target_xor = state->recv_packet_len ^ XOR_SECRET;
+
+        if (recv_xor != target_xor) {
+            state->recv_len = 0;
+            state->recv_packet_len = 0;
+
+            return ERR_OK;
+        }
+    }
+
+    // lenght + lenght_xor
+    uint8_t header_size = sizeof(state->recv_packet_len) + sizeof(state->recv_packet_len);
+   
     // Have we have received the whole buffer
-    if (state->recv_len == state->recv_packet_len + sizeof(state->recv_packet_len)) {
-        state->recv_callback(state->recv_arg, state->buffer_recv, state->recv_packet_len);
+    if (state->recv_len == state->recv_packet_len + header_size) {
+        state->recv_callback(state->recv_arg, &state->buffer_recv[header_size], state->recv_packet_len);
         state->recv_len = 0;
         state->recv_packet_len = 0;
     }
@@ -212,18 +229,21 @@ bool net_poll(NET_SERVER* state) {
 
 bool net_send(NET_SERVER* state, uint8_t* buf, uint16_t len)
 {   
-    memcpy(state->buffer_sent, &len, sizeof(len));
-    memcpy(state->buffer_sent, &buf[sizeof(len)], sizeof(uint8_t) * len);
+    uint8_t offs = 0;
+    memcpy(state->buffer_sent, &len, sizeof(len)); offs += sizeof(len);
+    uint16_t len_xor = len ^ XOR_SECRET;
+    memcpy(state->buffer_sent + offs, &len_xor, sizeof(len_xor)); offs += sizeof(len_xor);
+    memcpy(state->buffer_sent + offs, buf, len); offs += len;
 
     state->sent_len = 0;
-    state->sent_buf_len = len;
+    state->sent_buf_len = offs;
 
     DEBUG_printf("Writing %ld bytes to client\n", len);
     // this method is callback from lwIP, so cyw43_arch_lwip_begin is not required, however you
     // can use this method to cause an assertion in debug mode, if this method is called when
     // cyw43_arch_lwip_begin IS needed
     cyw43_arch_lwip_check();
-    err_t err = tcp_write(state->client_pcb, state->buffer_sent, len, TCP_WRITE_FLAG_COPY);
+    err_t err = tcp_write(state->client_pcb, state->buffer_sent, offs, TCP_WRITE_FLAG_COPY);
     if (err != ERR_OK) {
         DEBUG_printf("Failed to write data %d\n", err);
         tcp_server_result(state, -1);
